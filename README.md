@@ -1,1 +1,0 @@
-# automated-security-scanning-cicd
