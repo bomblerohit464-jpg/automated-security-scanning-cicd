@@ -1,0 +1,57 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureScan CI/CD</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>🛡 SecureScan CI/CD</h1>
+        <p>Automated Security Scanning with GitHub and Jenkins</p>
+    </header>
+
+    <main>
+        <section class="hero">
+            <h2>Secure Your Code Before Deployment</h2>
+            <p>Automate security checks in your development pipeline.</p>
+            <a href="#features">Explore Security Features</a>
+        </section>
+
+        <h2 id="features">Security Modules</h2>
+
+        <section class="cards">
+            <div class="card">
+                <h3>Source Code Scan</h3>
+                <p>Detect common Python security issues using Bandit.</p>
+                <span>Static Analysis (SAST)</span>
+            </div>
+
+            <div class="card">
+                <h3>Secret Detection</h3>
+                <p>Find accidentally committed API keys and passwords.</p>
+                <span>Gitleaks</span>
+            </div>
+
+            <div class="card">
+                <h3>Web Vulnerability Scan</h3>
+                <p>Test an authorized staging website using OWASP ZAP.</p>
+                <span>Dynamic Analysis (DAST)</span>
+            </div>
+
+            <div class="card">
+                <h3>CI/CD Pipeline</h3>
+                <p>Run automated security checks through Jenkins.</p>
+                <span>Build and deployment gate</span>
+            </div>
+        </section>
+
+        <footer>
+            <p>SecureScan | GitHub + Jenkins + Security Automation</p>
+        </footer>
+    </main>
+</body>
+</html>
