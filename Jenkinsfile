@@ -9,41 +9,70 @@ pipeline {
             }
         }
 
+        stage('Check Python') {
+            steps {
+                bat 'python --version'
+                bat 'python -m pip --version'
+            }
+        }
+
         stage('Install Dependencies') {
             steps {
-                sh '''
-                    python3 -m venv .venv
-                    .venv/bin/pip install -r requirements.txt
+                bat 'python -m pip install bandit'
+
+                bat '''
+                    if exist requirements.txt (
+                        python -m pip install -r requirements.txt
+                    )
                 '''
             }
         }
 
         stage('Security Scan') {
             steps {
-                sh '''
-                    mkdir -p reports
-                    .venv/bin/bandit -r . \
-                      -x ./.venv \
-                      -f json \
-                      -o reports/bandit-report.json
-                '''
+                script {
+                    def scanStatus = bat(
+                        returnStatus: true,
+                        script: 'python -m bandit -r . -f json -o bandit-report.json -x .git,venv,.venv'
+                    )
+
+                    if (scanStatus == 1) {
+                        echo 'Security findings detected. Report generated.'
+                        currentBuild.result = 'UNSTABLE'
+                    } else if (scanStatus != 0) {
+                        error("Bandit scan failed with exit code: ${scanStatus}")
+                    } else {
+                        echo 'Security scan completed successfully.'
+                    }
+                }
             }
         }
 
         stage('Archive Report') {
             steps {
-                archiveArtifacts artifacts: 'reports/**',
-                                 allowEmptyArchive: false
+                archiveArtifacts(
+                    artifacts: 'bandit-report.json',
+                    allowEmptyArchive: true
+                )
             }
         }
     }
 
     post {
-        success {
-            echo 'Security scan passed.'
+        always {
+            echo 'Pipeline completed. Check the console output and scan report.'
         }
+
+        success {
+            echo 'Pipeline completed successfully.'
+        }
+
+        unstable {
+            echo 'Pipeline completed with security findings.'
+        }
+
         failure {
-            echo 'Pipeline failed. Check the console output and scan report.'
+            echo 'Pipeline failed. Check the console output for details.'
         }
     }
 }
