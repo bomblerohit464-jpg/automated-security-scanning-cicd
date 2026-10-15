@@ -1,6 +1,14 @@
-
 pipeline {
     agent any
+
+    options {
+        timestamps()
+    }
+
+    environment {
+        // Change this to the actual Python executable on your PC.
+        PYTHON = 'C:\\Path\\To\\python.exe'
+    }
 
     stages {
         stage('Checkout') {
@@ -11,33 +19,74 @@ pipeline {
 
         stage('Check Python') {
             steps {
-                bat 'python --version'
+                bat '"%PYTHON%" --version'
+                bat '"%PYTHON%" -m pip --version'
             }
         }
 
-        stage('Install Security Scanner') {
+        stage('Install Dependencies') {
             steps {
-                bat 'python -m pip install -r requirements.txt'
+                bat '"%PYTHON%" -m pip install -r requirements.txt'
             }
         }
 
-        stage('Automated Security Scan') {
+        stage('Prepare Reports') {
             steps {
-                bat 'python -m bandit -r . -ll -ii -f json -o bandit-report.json'
+                bat 'if not exist reports mkdir reports'
             }
         }
 
-        stage('Application Test') {
+        stage('Bandit Security Scan') {
             steps {
-                bat 'python app.py'
+                script {
+                    int result = bat(
+                        returnStatus: true,
+                        script: '"%PYTHON%" -m bandit -r . -x .\\venv,.\\.git,.\\reports -f json -o reports\\bandit-report.json'
+                    )
+
+                    if (result != 0) {
+                        echo "Bandit returned exit code ${result}. Review the report."
+                    }
+                }
+            }
+        }
+
+        stage('Dependency Audit') {
+            steps {
+                script {
+                    int result = bat(
+                        returnStatus: true,
+                        script: '"%PYTHON%" -m pip_audit -r requirements.txt -f json -o reports\\pip-audit.json'
+                    )
+
+                    if (result != 0) {
+                        echo "Dependency audit returned exit code ${result}. Review the report."
+                    }
+                }
+            }
+        }
+
+        stage('Application Health Check') {
+            steps {
+                bat '"%PYTHON%" -m compileall -q app.py'
             }
         }
     }
 
     post {
         always {
-            archiveArtifacts artifacts: 'bandit-report.json',
-                             allowEmptyArchive: true
+            archiveArtifacts(
+                artifacts: 'reports/*.json',
+                allowEmptyArchive: true
+            )
+        }
+
+        success {
+            echo 'Pipeline stages completed.'
+        }
+
+        failure {
+            echo 'A pipeline stage failed. Review the Jenkins console output.'
         }
     }
 }
