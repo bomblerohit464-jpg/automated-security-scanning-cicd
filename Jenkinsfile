@@ -24,35 +24,46 @@ pipeline {
                 bat '''
                     set "PYTHON=C:\\Users\\mithu\\AppData\\Local\\Programs\\Python\\Python313\\python.exe"
                     "%PYTHON%" -m pip install bandit
+                    if errorlevel 1 exit /b 1
                 '''
             }
         }
 
-        
         stage('Automated Security Scan') {
             steps {
                 bat '''
                     set "PYTHON=C:\\Users\\mithu\\AppData\\Local\\Programs\\Python\\Python313\\python.exe"
 
                     "%PYTHON%" -m bandit -r . -ll -ii -f json -o bandit-report.json
+                    set "BANDIT_EXIT=%ERRORLEVEL%"
 
-                    if errorlevel 2 exit /b %ERRORLEVEL%
-                    if errorlevel 1 echo Security findings detected. Continuing to archive the report.
-                    exit /b 0
+                    if "%BANDIT_EXIT%"=="0" (
+                        echo No qualifying security findings detected.
+                        exit /b 0
+                    )
+
+                    if "%BANDIT_EXIT%"=="1" (
+                        echo Security findings detected. Review bandit-report.json.
+                        exit /b 0
+                    )
+
+                    echo Bandit encountered an error. Exit code: %BANDIT_EXIT%
+                    exit /b %BANDIT_EXIT%
                 '''
             }
         }
-
-        
 
         stage('Application Test') {
             steps {
                 bat '''
                     set "PYTHON=C:\\Users\\mithu\\AppData\\Local\\Programs\\Python\\Python313\\python.exe"
+
                     if exist app.py (
-                        "%PYTHON%" app.py
+                        "%PYTHON%" -m py_compile app.py
+                        if errorlevel 1 exit /b 1
+                        echo Application Python syntax check passed.
                     ) else (
-                        echo app.py not found - skipping application test
+                        echo app.py not found. Application syntax check skipped.
                     )
                 '''
             }
@@ -73,7 +84,7 @@ pipeline {
         }
 
         failure {
-            echo 'Pipeline failed. Check Console Output.'
+            echo 'Pipeline failed. Review the earlier Console Output errors.'
         }
     }
 }
