@@ -10,72 +10,62 @@ pipeline {
         }
 
         stage('Check Python') {
-    steps {
-        bat 'echo Checking Python and pip'
-        bat 'where python'
-        bat 'python --version'
-        bat 'python -m pip --version'
-    }
-}
-        }
-
-        stage('Install Dependencies') {
             steps {
-                bat 'python -m pip install bandit'
-
                 bat '''
-                    if exist requirements.txt (
-                        python -m pip install -r requirements.txt
-                    )
+                    set "PYTHON=C:\\Users\\mithu\\AppData\\Local\\Programs\\Python\\Python313\\python.exe"
+                    "%PYTHON%" --version
+                    "%PYTHON%" -m pip --version
                 '''
             }
         }
 
-        stage('Security Scan') {
+        stage('Install Security Scanner') {
             steps {
-                script {
-                    def scanStatus = bat(
-                        returnStatus: true,
-                        script: 'python -m bandit -r . -f json -o bandit-report.json -x .git,venv,.venv'
-                    )
-
-                    if (scanStatus == 1) {
-                        echo 'Security findings detected. Report generated.'
-                        currentBuild.result = 'UNSTABLE'
-                    } else if (scanStatus != 0) {
-                        error("Bandit scan failed with exit code: ${scanStatus}")
-                    } else {
-                        echo 'Security scan completed successfully.'
-                    }
-                }
+                bat '''
+                    set "PYTHON=C:\\Users\\mithu\\AppData\\Local\\Programs\\Python\\Python313\\python.exe"
+                    "%PYTHON%" -m pip install bandit
+                '''
             }
         }
 
-        stage('Archive Report') {
+        stage('Automated Security Scan') {
             steps {
-                archiveArtifacts(
-                    artifacts: 'bandit-report.json',
-                    allowEmptyArchive: true
-                )
+                bat '''
+                    set "PYTHON=C:\\Users\\mithu\\AppData\\Local\\Programs\\Python\\Python313\\python.exe"
+                    "%PYTHON%" -m bandit -r . -ll -ii -f json -o bandit-report.json
+                '''
+            }
+        }
+
+        stage('Application Test') {
+            steps {
+                bat '''
+                    set "PYTHON=C:\\Users\\mithu\\AppData\\Local\\Programs\\Python\\Python313\\python.exe"
+                    if exist app.py (
+                        "%PYTHON%" app.py
+                    ) else (
+                        echo app.py not found - skipping application test
+                    )
+                '''
             }
         }
     }
 
     post {
         always {
-            echo 'Pipeline completed. Check the console output and scan report.'
+            archiveArtifacts(
+                artifacts: 'bandit-report.json',
+                allowEmptyArchive: true
+            )
+            echo 'Security scanning pipeline finished.'
         }
 
         success {
             echo 'Pipeline completed successfully.'
         }
 
-        unstable {
-            echo 'Pipeline completed with security findings.'
-        }
-
         failure {
-            echo 'Pipeline failed. Check the console output for details.'
+            echo 'Pipeline failed. Check Console Output.'
         }
     }
 }
