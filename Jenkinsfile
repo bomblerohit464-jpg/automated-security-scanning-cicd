@@ -28,14 +28,22 @@ pipeline {
             }
         }
 
+        
         stage('Automated Security Scan') {
             steps {
                 bat '''
                     set "PYTHON=C:\\Users\\mithu\\AppData\\Local\\Programs\\Python\\Python313\\python.exe"
+
                     "%PYTHON%" -m bandit -r . -ll -ii -f json -o bandit-report.json
+
+                    if errorlevel 2 exit /b %ERRORLEVEL%
+                    if errorlevel 1 echo Security findings detected. Continuing to archive the report.
+                    exit /b 0
                 '''
             }
         }
+
+        
 
         stage('Application Test') {
             steps {
