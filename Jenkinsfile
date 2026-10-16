@@ -10,10 +10,13 @@ pipeline {
         }
 
         stage('Check Python') {
-            steps {
-                bat 'python --version'
-                bat 'python -m pip --version'
-            }
+    steps {
+        bat 'echo Checking Python and pip'
+        bat 'where python'
+        bat 'python --version'
+        bat 'python -m pip --version'
+    }
+}
         }
 
         stage('Install Dependencies') {
