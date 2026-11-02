@@ -6,19 +6,19 @@ node {
         }
 
         stage('Python Version') {
-            bat 'py -3 --version'
+            bat '"C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python312\\python.exe" --version'
         }
 
         stage('Install Dependencies') {
-            bat 'py -3 -m pip install -r requirements.txt'
+            bat '"C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python312\\python.exe" -m pip install -r requirements.txt'
         }
 
         stage('Bandit Security Scan') {
-            bat 'py -3 -m bandit -r app.py -f json -o bandit-report.json'
+            bat '"C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python312\\python.exe" -m bandit -r app.py -f json -o bandit-report.json'
         }
 
         stage('Dependency Vulnerability Scan') {
-            bat 'py -3 -m pip_audit -r requirements.txt -f json -o pip-audit-report.json'
+            bat '"C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python312\\python.exe" -m pip_audit -r requirements.txt -f json -o pip-audit-report.json'
         }
 
         stage('Build Successful') {
