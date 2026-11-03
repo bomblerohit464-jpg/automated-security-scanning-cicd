@@ -4,20 +4,26 @@ pipeline {
 
     environment {
         PYTHON = 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python312\\python.exe'
+        APP_URL = 'http://127.0.0.1:5000'
     }
 
     stages {
 
         stage('Checkout') {
             steps {
-                echo 'Downloading source code from GitHub'
+                echo '======================================'
+                echo 'DOWNLOADING SOURCE CODE FROM GITHUB'
+                echo '======================================'
+
                 checkout scm
-                echo 'GitHub checkout completed!'
+
+                echo 'GitHub checkout completed successfully!'
             }
         }
 
         stage('Python Version') {
             steps {
+                echo 'Checking Python version'
                 bat '"%PYTHON%" --version'
             }
         }
@@ -25,8 +31,10 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 echo 'Installing project dependencies'
+
                 bat '"%PYTHON%" -m pip install -r requirements.txt'
-                echo 'Dependencies installed successfully'
+
+                echo 'Dependencies installed successfully!'
             }
         }
 
@@ -40,12 +48,15 @@ pipeline {
                         script: '"%PYTHON%" -m bandit -r app.py -f screen'
                     )
 
-                    bat '"%PYTHON%" -m bandit -r app.py -f json -o bandit-report.json'
+                    bat(
+                        returnStatus: true,
+                        script: '"%PYTHON%" -m bandit -r app.py -f json -o bandit-report.json'
+                    )
 
                     if (result == 0) {
                         echo 'Bandit scan completed without detected issues.'
                     } else {
-                        echo 'Bandit detected security findings. Check the report.'
+                        echo 'Security findings detected. Check the report.'
                         currentBuild.result = 'UNSTABLE'
                     }
                 }
@@ -62,12 +73,15 @@ pipeline {
                         script: '"%PYTHON%" -m pip_audit -r requirements.txt'
                     )
 
-                    bat '"%PYTHON%" -m pip_audit -r requirements.txt -f json -o pip-audit-report.json'
+                    bat(
+                        returnStatus: true,
+                        script: '"%PYTHON%" -m pip_audit -r requirements.txt -f json -o pip-audit-report.json'
+                    )
 
                     if (result == 0) {
                         echo 'No known dependency vulnerabilities found.'
                     } else {
-                        echo 'Dependency vulnerabilities detected. Check the report.'
+                        echo 'Dependency vulnerabilities detected.'
                         currentBuild.result = 'UNSTABLE'
                     }
                 }
@@ -77,11 +91,27 @@ pipeline {
         stage('Build Successful') {
             steps {
                 echo '======================================'
-                echo ' AUTOMATED SECURITY SCANNING'
+                echo 'AUTOMATED SECURITY SCANNING PROJECT'
                 echo '======================================'
+
                 echo 'Python Application: Checked'
                 echo 'Bandit Security Scan: Completed'
                 echo 'Dependency Scan: Completed'
+
+                echo 'Build process completed!'
+            }
+        }
+
+        stage('Application URL') {
+            steps {
+                echo '======================================'
+                echo 'FLASK APPLICATION ADDRESS'
+                echo '======================================'
+
+                echo 'Open your browser using:'
+                echo 'http://127.0.0.1:5000'
+
+                echo 'Note: Flask must be running separately.'
                 echo '======================================'
             }
         }
@@ -93,7 +123,8 @@ pipeline {
                 artifacts: '*-report.json',
                 allowEmptyArchive: true
             )
-            echo 'Security scan reports archived in Jenkins.'
+
+            echo 'Security reports archived successfully.'
         }
 
         success {
@@ -101,11 +132,13 @@ pipeline {
         }
 
         unstable {
-            echo 'Pipeline completed with security findings. Review reports.'
+            echo 'Pipeline completed with security findings.'
+            echo 'Please review the archived reports.'
         }
 
         failure {
-            echo 'Pipeline failed. Check Console Output for errors.'
+            echo 'PIPELINE FAILED!'
+            echo 'Check Jenkins Console Output.'
         }
     }
 }
